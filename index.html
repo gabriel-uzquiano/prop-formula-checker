@@ -30,36 +30,52 @@
       <h2>Propositional Logic — Syntax</h2>
       <div class="help-cols">
         <div class="help-col">
+
           <h3>Vocabulary</h3>
-          <ul>
-            <li><strong>Sentence letters</strong> — p, q, r, s, t (with optional numeric subscripts)</li>
-            <li><strong>Connectives</strong> — ¬ &nbsp; ∧ &nbsp; ∨ &nbsp; →</li>
-            <li><strong>Parentheses</strong> — ( &nbsp; )</li>
+          <ul class="help-list">
+            <li><strong>Sentence letters</strong><span class="help-item-detail">p, q, r, s, t (with optional numeric subscripts)</span></li>
+            <li><strong>Connectives</strong><span class="help-item-detail">¬ &nbsp; ∧ &nbsp; ∨ &nbsp; →</span></li>
+            <li><strong>Parentheses</strong><span class="help-item-detail">( &nbsp; )</span></li>
           </ul>
+
           <h3>Formation rules</h3>
-          <ol>
+          <ol class="help-list">
             <li>Every sentence letter is a formula.</li>
             <li>If φ and ψ are formulas, so are:<br>
-              &nbsp;&nbsp;¬φ, &nbsp; (φ ∧ ψ), &nbsp; (φ ∨ ψ), &nbsp; (φ → ψ)</li>
+              <span class="help-sublist">¬φ, &nbsp; (φ ∧ ψ), &nbsp; (φ ∨ ψ), &nbsp; (φ → ψ)</span></li>
             <li>Nothing else is a formula.</li>
           </ol>
-          <p class="help-note">The outer parentheses of the main formula may be omitted.</p>
+          <p class="help-note">The outer parentheses of a formula may be omitted when it is not part of a larger formula.</p>
+
         </div>
         <div class="help-col">
+
           <h3>Examples</h3>
-          <ul class="example-list">
-            <li><code>(p ∨ (q → ¬r))</code> — valid formula</li>
-            <li><code>¬(p ∧ q)</code> — valid formula</li>
-            <li><code>p → q</code> — valid (outer parens omitted)</li>
-            <li><code>¬(p → A)</code> — not a formula (A not a letter)</li>
-          </ul>
+          <table class="help-table">
+            <thead>
+              <tr><th>Expression</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>(p ∨ (q → ¬r))</code></td><td>official formula</td></tr>
+              <tr><td><code>¬(p ∧ q)</code></td><td>official formula</td></tr>
+              <tr><td><code>p → q</code></td><td>unofficial formula (abbreviates <code>(p → q)</code>)</td></tr>
+              <tr><td><code>¬(p → A)</code></td><td>not a formula (<code>A</code> is not a sentence letter)</td></tr>
+            </tbody>
+          </table>
+
           <h3>ASCII shortcuts</h3>
-          <ul>
-            <li><code>~</code> or <code>-</code> &nbsp;→&nbsp; ¬</li>
-            <li><code>&amp;</code> or <code>/\</code> &nbsp;→&nbsp; ∧</li>
-            <li><code>|</code> or <code>\/</code> &nbsp;→&nbsp; ∨</li>
-            <li><code>-&gt;</code> or <code>=&gt;</code> &nbsp;→&nbsp; →</li>
-          </ul>
+          <table class="help-table">
+            <thead>
+              <tr><th>Type</th><th>Symbol</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>~</code> &nbsp; <code>-</code></td><td>¬</td></tr>
+              <tr><td><code>&amp;</code> &nbsp; <code>/\</code></td><td>∧</td></tr>
+              <tr><td><code>|</code> &nbsp; <code>\/</code></td><td>∨</td></tr>
+              <tr><td><code>-&gt;</code> &nbsp; <code>=&gt;</code></td><td>→</td></tr>
+            </tbody>
+          </table>
+
         </div>
       </div>
     </div>

@@ -883,3 +883,144 @@ body.card-mode .graph-container {
 [data-card] body {
   background: transparent;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   PROP FORMULA CHECKER — layout, input, tree, help overrides
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Help panel layout ─────────────────────────────────────────── */
+.help-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+}
+@media (max-width: 640px) { .help-cols { grid-template-columns: 1fr; } }
+
+/* h3 sections inside help: breathing room above each heading */
+.help-col h3 {
+  margin-top: var(--space-6);
+  margin-bottom: var(--space-3);
+}
+.help-col h3:first-child { margin-top: 0; }
+
+/* Indented list items — bullet/number flush-left of title is gone */
+.help-list {
+  list-style: none;
+  padding-left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+}
+/* Numbered list keeps numbers */
+ol.help-list {
+  list-style: decimal;
+  padding-left: var(--space-6);
+}
+.help-list li { line-height: 1.55; }
+
+/* Vocab: label on one line, detail indented below */
+.help-item-detail {
+  display: block;
+  margin-top: 2px;
+  margin-left: var(--space-4);
+  color: var(--color-text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+}
+
+/* Inline examples in formation rules */
+.help-sublist {
+  display: inline-block;
+  margin-top: 4px;
+  margin-left: var(--space-4);
+  font-family: var(--font-body);
+  font-style: italic;
+  color: var(--color-text-muted);
+}
+
+/* Help tables — no visible lines, just spacing */
+.help-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  margin-top: 0;
+}
+.help-table th {
+  text-align: left;
+  padding: var(--space-1) var(--space-3) var(--space-2) 0;
+  border-bottom: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.help-table td {
+  padding: var(--space-2) var(--space-3) var(--space-2) 0;
+  border-bottom: none;
+  font-size: var(--text-sm);
+  vertical-align: middle;
+  line-height: 1.5;
+}
+.help-table td:last-child { color: var(--color-text-muted); }
+.help-table td code { font-size: 0.9em; }
+/* Subtle row separation without lines */
+.help-table tbody tr:not(:last-child) td {
+  padding-bottom: var(--space-1);
+}
+
+/* ── Formula input ─────────────────────────────────────────────── */
+.formula-input-field {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  color: var(--color-text);
+  /* (v) no double outline — suppress the :focus-visible global ring */
+  outline: none;
+  transition: border-color var(--transition);
+  box-sizing: border-box;
+  margin-bottom: var(--space-2);
+}
+/* Only border changes on focus — no box-shadow ring */
+.formula-input-field:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: none;
+}
+.formula-input-field.valid   { border-color: var(--color-teal); }
+.formula-input-field.invalid { border-color: var(--color-false); }
+
+/* ── Tree container — centered ────────────────────────────────── */
+/* (vi) center the SVG horizontally within the card */
+.tree-container {
+  width: 100%;
+  min-height: 180px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: var(--space-4) 0;
+  overflow-x: auto;
+}
+.tree-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  width: 100%;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: var(--text-sm);
+  text-align: center;
+}
+/* SVG uses its natural pixel width; flex centers it */
+#tree-svg {
+  display: block;
+  flex-shrink: 0;
+}
