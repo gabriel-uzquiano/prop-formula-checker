@@ -1,161 +1,237 @@
-// parser.js — Propositional Logic formula parser
-// Vocabulary: sentence letters p,q,r,s,t (with optional numeric subscripts)
-// Connectives: ¬ ∧ ∨ →
-// Parentheses: ( )
+/**
+ * Propositional Logic Parser
+ *
+ * Vocabulary (following PHIL 220g exactly):
+ *   Sentence letters: p, q, r, s, t  (with optional numeric subscripts: p1, q2, …)
+ *   Connectives:      ¬  ∧  ∨  →
+ *   Parentheses:      (  )
+ *
+ * Grammar (strict — parentheses required for binary connectives):
+ *   formula ::= letter
+ *             | ¬ formula
+ *             | ( formula ∧ formula )
+ *             | ( formula ∨ formula )
+ *             | ( formula → formula )
+ *
+ * Notational convention: outer parentheses of the top-level formula may be omitted.
+ *
+ * ASCII aliases accepted:
+ *   ~  -        →  ¬
+ *   &  /\       →  ∧
+ *   |  \/       →  ∨
+ *   -> =>       →  →
+ *
+ * Returns an AST node:
+ *   { type: 'letter', name: 'p', sub: null|'1' }
+ *   { type: 'neg',   arg: node }
+ *   { type: 'and',   left: node, right: node }
+ *   { type: 'or',    left: node, right: node }
+ *   { type: 'imp',   left: node, right: node }
+ *
+ * Throws ParseError with a human-readable message on failure.
+ */
 
-// ── ASCII normalisation ───────────────────────────────────────────────────────
-function normaliseInput(raw) {
-  return raw
-    .replace(/=>/g, '→')
-    .replace(/->/g, '→')
-    .replace(/\/\\/g, '∧')
-    .replace(/\\\//g, '∨')
-    .replace(/&/g, '∧')
-    .replace(/\|/g, '∨')
-    .replace(/~/g, '¬')
-    .replace(/\s+/g, ' ')
-    .trim();
+class ParseError extends Error {
+  constructor(msg) { super(msg); this.name = 'ParseError'; }
 }
 
-// ── Tokeniser ─────────────────────────────────────────────────────────────────
-function tokenise(input) {
+// ── Normalise ASCII shorthands ────────────────────────────────────────────────
+function normalise(s) {
+  return s
+    .replace(/<->/g, '↔')   // biconditional (not in PL here, but catch gracefully)
+    .replace(/<=>/g, '↔')
+    .replace(/->/g,  '→')
+    .replace(/=>/g,  '→')
+    .replace(/\/\\/g,'∧')
+    .replace(/\\\//g,'∨')
+    .replace(/~/g,   '¬')
+    .replace(/-(?!>)/g, '¬')  // lone - that wasn't already consumed as ->
+    .replace(/&/g,   '∧')
+    .replace(/\|/g,  '∨');
+}
+
+// ── Token types ───────────────────────────────────────────────────────────────
+const T = {
+  LETTER: 'LETTER',
+  NEG:    'NEG',
+  AND:    'AND',
+  OR:     'OR',
+  IMP:    'IMP',
+  BICOND: 'BICOND',
+  LPAREN: 'LPAREN',
+  RPAREN: 'RPAREN',
+  EOF:    'EOF',
+};
+
+function tokenise(raw) {
+  const s = normalise(raw.trim());
   const tokens = [];
   let i = 0;
-  while (i < input.length) {
-    const ch = input[i];
-    if (ch === ' ') { i++; continue; }
-    if (ch === '¬') { tokens.push({ type: 'NEG', val: '¬' }); i++; continue; }
-    if (ch === '∧') { tokens.push({ type: 'AND', val: '∧' }); i++; continue; }
-    if (ch === '∨') { tokens.push({ type: 'OR',  val: '∨' }); i++; continue; }
-    if (ch === '→') { tokens.push({ type: 'IMP', val: '→' }); i++; continue; }
-    if (ch === '(') { tokens.push({ type: 'LPAREN', val: '(' }); i++; continue; }
-    if (ch === ')') { tokens.push({ type: 'RPAREN', val: ')' }); i++; continue; }
-    // Sentence letter: p,q,r,s,t with optional numeric subscript
+  while (i < s.length) {
+    const ch = s[i];
+    if (ch === ' ' || ch === '\t' || ch === '\n') { i++; continue; }
+    if (ch === '¬') { tokens.push({ type: T.NEG });    i++; continue; }
+    if (ch === '∧') { tokens.push({ type: T.AND });    i++; continue; }
+    if (ch === '∨') { tokens.push({ type: T.OR  });    i++; continue; }
+    if (ch === '→') { tokens.push({ type: T.IMP });    i++; continue; }
+    if (ch === '↔') { tokens.push({ type: T.BICOND }); i++; continue; }
+    if (ch === '(') { tokens.push({ type: T.LPAREN }); i++; continue; }
+    if (ch === ')') { tokens.push({ type: T.RPAREN }); i++; continue; }
+
+    // Sentence letters: p, q, r, s, t with optional numeric subscript
     if (/[pqrst]/.test(ch)) {
-      let letter = ch; i++;
-      let subscript = '';
-      while (i < input.length && /[0-9]/.test(input[i])) {
-        subscript += input[i]; i++;
-      }
-      tokens.push({ type: 'LETTER', val: letter + subscript });
+      let sub = '';
+      i++;
+      while (i < s.length && /[0-9]/.test(s[i])) { sub += s[i]; i++; }
+      tokens.push({ type: T.LETTER, name: ch, sub: sub || null });
       continue;
     }
-    tokens.push({ type: 'UNKNOWN', val: ch }); i++;
+
+    // Uppercase letters or other lowercase — not in vocabulary
+    if (/[A-Za-z]/.test(ch)) {
+      let word = ch; i++;
+      while (i < s.length && /[A-Za-z0-9]/.test(s[i])) { word += s[i]; i++; }
+      if (/^[pqrst]/.test(word)) {
+        tokens.push({ type: T.LETTER, name: word[0], sub: null });
+        i -= word.length - 1;
+      } else {
+        throw new ParseError(
+          `'${word}' is not a symbol of propositional logic. ` +
+          `Sentence letters are p, q, r, s, t (with optional numeric subscripts).`
+        );
+      }
+      continue;
+    }
+
+    throw new ParseError(
+      `Unexpected character '${ch}'. Only sentence letters (p, q, r, s, t), connectives (¬ ∧ ∨ →), and parentheses are allowed.`
+    );
   }
+  tokens.push({ type: T.EOF });
   return tokens;
 }
 
-// ── Recursive-descent parser ──────────────────────────────────────────────────
-// Grammar (official):
-//   formula  ::= LETTER | '¬' formula | '(' formula BINOP formula ')'
-//   BINOP    ::= '∧' | '∨' | '→'
-//
-// Unofficial: outermost parens may be omitted for a binary formula.
-
-function parse(tokens) {
-  let pos = 0;
-
-  function peek()    { return tokens[pos]; }
-  function consume() { return tokens[pos++]; }
-  function atEnd()   { return pos >= tokens.length; }
-
-  function parseFormula(allowUnofficial) {
-    const tok = peek();
-    if (!tok) return null;
-
-    // Negation
-    if (tok.type === 'NEG') {
-      consume();
-      const sub = parseFormula(false);
-      if (!sub) return null;
-      return { type: 'NEG', sub, str: '¬' + sub.str, official: sub.official };
-    }
-
-    // Parenthesised binary
-    if (tok.type === 'LPAREN') {
-      consume();
-      const left = parseFormula(false);
-      if (!left) return null;
-      const op = peek();
-      if (!op || !['AND','OR','IMP'].includes(op.type)) return null;
-      consume();
-      const right = parseFormula(false);
-      if (!right) return null;
-      const rp = peek();
-      if (!rp || rp.type !== 'RPAREN') return null;
-      consume();
-      const opStr = op.val;
-      return {
-        type: op.type,
-        left, right,
-        str: '(' + left.str + opStr + right.str + ')',
-        official: true,
-      };
-    }
-
-    // Sentence letter
-    if (tok.type === 'LETTER') {
-      consume();
-      return { type: 'LETTER', val: tok.val, str: tok.val, official: true };
-    }
-
-    return null;
+// ── Parser ────────────────────────────────────────────────────────────────────
+class Parser {
+  constructor(tokens) {
+    this.tokens = tokens;
+    this.pos    = 0;
   }
 
-  // First try official parse
-  const tree = parseFormula(false);
-  if (!tree || !atEnd()) {
-    // Try unofficial: binary formula without outermost parens
-    pos = 0;
-    const left = parseFormula(false);
-    if (!left) return { ok: false };
-    const op = peek();
-    if (!op || !['AND','OR','IMP'].includes(op.type)) return { ok: false };
-    consume();
-    const right = parseFormula(false);
-    if (!right || !atEnd()) return { ok: false };
-    const opStr = op.val;
-    return {
-      ok: true,
-      official: false,
-      tree: {
-        type: op.type,
-        left, right,
-        str: left.str + opStr + right.str,
-        official: false,
-      },
-      officialStr: '(' + left.str + opStr + right.str + ')',
-    };
+  peek()    { return this.tokens[this.pos]; }
+  consume() { return this.tokens[this.pos++]; }
+  at(type)  { return this.peek().type === type; }
+  expect(type, hint) {
+    if (!this.at(type)) {
+      const got = this.peek().type === T.EOF ? 'end of input'
+                : this.peek().type === T.LETTER ? `'${this.peek().name}'`
+                : `'${tokenLabel(this.peek().type)}'`;
+      throw new ParseError(hint || `Expected ${tokenLabel(type)}, got ${got}.`);
+    }
+    return this.consume();
   }
 
-  return { ok: true, official: true, tree, officialStr: tree.str };
+  parse() {
+    if (this.at(T.EOF)) throw new ParseError('Empty input — enter a formula.');
+    const node = this.parseFormula(true);
+    if (!this.at(T.EOF)) {
+      const tok = this.peek();
+      const got = tok.type === T.LETTER ? `'${tok.name}'` : `'${tokenLabel(tok.type)}'`;
+      throw new ParseError(`Unexpected ${got} after formula — check your parentheses.`);
+    }
+    return node;
+  }
+
+  parseFormula(topLevel = false) {
+    if (this.at(T.NEG)) {
+      this.consume();
+      if (this.at(T.EOF)) throw new ParseError('¬ must be followed by a formula.');
+      const arg = this.parseFormula();
+      return { type: 'neg', arg };
+    }
+
+    if (this.at(T.LPAREN)) {
+      this.consume();
+      if (this.at(T.RPAREN)) throw new ParseError('Empty parentheses — put a formula inside ( ).');
+      const left = this.parseFormula();
+      const conn = this.parseConnective();
+      const right = this.parseFormula();
+      this.expect(T.RPAREN, `Missing closing ')' after the right subformula.`);
+      return { type: conn, left, right };
+    }
+
+    if (this.at(T.LETTER)) {
+      const tok = this.consume();
+      return { type: 'letter', name: tok.name, sub: tok.sub };
+    }
+
+    if (this.at(T.AND) || this.at(T.OR) || this.at(T.IMP)) {
+      throw new ParseError(`'${tokenLabel(this.peek().type)}' cannot start a formula — did you forget the left subformula or a '('?`);
+    }
+    if (this.at(T.RPAREN)) {
+      throw new ParseError(`Unexpected ')' — check your parentheses.`);
+    }
+    if (this.at(T.BICOND)) {
+      throw new ParseError(`'↔' is not a connective of propositional logic in this course. Use ¬, ∧, ∨, or →.`);
+    }
+
+    throw new ParseError(`Expected a formula, but got '${tokenLabel(this.peek().type)}'.`);
+  }
+
+  parseConnective() {
+    if (this.at(T.AND)) { this.consume(); return 'and'; }
+    if (this.at(T.OR))  { this.consume(); return 'or';  }
+    if (this.at(T.IMP)) { this.consume(); return 'imp'; }
+    if (this.at(T.BICOND)) throw new ParseError(`'↔' is not a connective of this language. Use ∧, ∨, or →.`);
+    const got = this.at(T.EOF) ? 'end of input'
+              : this.at(T.RPAREN) ? "')'"
+              : `'${tokenLabel(this.peek().type)}'`;
+    throw new ParseError(`Expected a connective (∧, ∨, or →) between the two subformulas, but got ${got}.`);
+  }
+}
+
+function tokenLabel(type) {
+  return { NEG:'¬', AND:'∧', OR:'∨', IMP:'→', BICOND:'↔',
+           LPAREN:'(', RPAREN:')', LETTER:'sentence letter', EOF:'end of input' }[type] || type;
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
-function parseFormula(raw) {
-  const norm = normaliseInput(raw);
-  if (!norm) return { ok: false, norm: '' };
-  const tokens = tokenise(norm);
-  if (tokens.some(t => t.type === 'UNKNOWN')) return { ok: false, norm };
-  const result = parse(tokens);
-  return { ...result, norm };
+
+function parse(input) {
+  const tokens = tokenise(input);
+  const p = new Parser(tokens);
+  return p.parse();
 }
 
-// ── Sentence letters ──────────────────────────────────────────────────────────
-function getLetters(tree) {
-  if (!tree) return new Set();
-  if (tree.type === 'LETTER') return new Set([tree.val]);
-  if (tree.type === 'NEG') return getLetters(tree.sub);
-  return new Set([...getLetters(tree.left), ...getLetters(tree.right)]);
+function prettyPrint(node, topLevel = true) {
+  if (!node) return '';
+  switch (node.type) {
+    case 'letter': return node.name + (node.sub || '');
+    case 'neg':    return '¬' + prettyAtom(node.arg);
+    case 'and':    return wrap(`${prettyPrint(node.left, false)} ∧ ${prettyPrint(node.right, false)}`, topLevel);
+    case 'or':     return wrap(`${prettyPrint(node.left, false)} ∨ ${prettyPrint(node.right, false)}`, topLevel);
+    case 'imp':    return wrap(`${prettyPrint(node.left, false)} → ${prettyPrint(node.right, false)}`, topLevel);
+    default: return '?';
+  }
 }
 
-// ── Truth evaluator ───────────────────────────────────────────────────────────
-function evaluate(tree, assignment) {
-  if (!tree) return null;
-  if (tree.type === 'LETTER') return assignment[tree.val] === true;
-  if (tree.type === 'NEG') return !evaluate(tree.sub, assignment);
-  if (tree.type === 'AND') return evaluate(tree.left, assignment) && evaluate(tree.right, assignment);
-  if (tree.type === 'OR')  return evaluate(tree.left, assignment) || evaluate(tree.right, assignment);
-  if (tree.type === 'IMP') return !evaluate(tree.left, assignment) || evaluate(tree.right, assignment);
-  return null;
+function prettyAtom(node) {
+  if (node.type === 'letter' || node.type === 'neg') return prettyPrint(node, false);
+  return '(' + prettyPrint(node, false) + ')';
+}
+
+function wrap(s, topLevel) {
+  return topLevel ? s : `(${s})`;
+}
+
+function collectLetters(ast) {
+  const letters = new Set();
+  function walk(node) {
+    if (!node) return;
+    if (node.type === 'letter') { letters.add(node.name + (node.sub || '')); return; }
+    if (node.type === 'neg')   { walk(node.arg); return; }
+    walk(node.left); walk(node.right);
+  }
+  walk(ast);
+  return [...letters].sort();
 }

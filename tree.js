@@ -1,145 +1,233 @@
-// tree.js — SVG parse tree renderer
+/**
+ * Parse tree renderer for propositional logic.
+ *
+ * Each node displays the full subformula it represents.
+ * Layout is top-down: root at top, leaves at bottom.
+ *
+ * Node colors:
+ *   - Atomic (letter): teal border
+ *   - Compound (negation / binary): maroon border
+ */
 
-const TREE_COLORS = {
-  LETTER: { stroke: '#4a9ead', fill: '#e8f6f8' },
-  NEG:    { stroke: '#c0606a', fill: '#fdf0f1' },
-  AND:    { stroke: '#c0606a', fill: '#fdf0f1' },
-  OR:     { stroke: '#c0606a', fill: '#fdf0f1' },
-  IMP:    { stroke: '#c0606a', fill: '#fdf0f1' },
-};
+const PAD_X   = 12;
+const PAD_Y   = 7;
+const FONT_SZ = 13;
+const V_GAP   = 48;
+const H_GAP   = 16;
 
-const NODE_W = 110, NODE_H = 34, NODE_RX = 6;
-const V_GAP = 54, H_GAP = 16;
-
-function measureTree(tree) {
-  if (!tree) return { w: NODE_W, h: NODE_H };
-  if (tree.type === 'LETTER') return { w: NODE_W, h: NODE_H, children: [] };
-
-  const children = tree.type === 'NEG'
-    ? [tree.sub]
-    : [tree.left, tree.right];
-
-  const childMeasures = children.map(measureTree);
-  const totalChildW = childMeasures.reduce((s, m) => s + m.w, 0) + H_GAP * (children.length - 1);
-  const w = Math.max(NODE_W, totalChildW);
-  const childH = Math.max(...childMeasures.map(m => m.h));
-  return { w, h: NODE_H + V_GAP + childH, children: childMeasures };
+function nodeLabel(node, isRoot = false) {
+  return prettyPrint(node, isRoot);
 }
 
-function layoutTree(tree, measures, x, y) {
-  if (!tree) return [];
-  const nodes = [];
-  const cx = x + measures.w / 2;
-  const cy = y + NODE_H / 2;
-  const children = tree.type === 'NEG' ? [tree.sub] : tree.type === 'LETTER' ? [] : [tree.left, tree.right];
-
-  // Layout children
-  let childX = x;
-  const childNodes = [];
-  children.forEach((child, i) => {
-    const cm = measures.children[i];
-    const sub = layoutTree(child, cm, childX, y + NODE_H + V_GAP);
-    childNodes.push(...sub);
-    childX += cm.w + H_GAP;
-  });
-
-  // Compute child centres for edge drawing
-  let cxChild = x;
-  const childCentres = children.map((_, i) => {
-    const cm = measures.children[i];
-    const centre = cxChild + cm.w / 2;
-    cxChild += cm.w + H_GAP;
-    return centre;
-  });
-
-  nodes.push({ tree, cx, cy, childCentres, childY: y + NODE_H + V_GAP + NODE_H / 2 });
-  nodes.push(...childNodes);
-  return nodes;
+function children(node) {
+  if (node.type === 'letter') return [];
+  if (node.type === 'neg')    return [node.arg];
+  return [node.left, node.right];
 }
 
-function renderTree(svg, tree, assignment) {
-  svg.innerHTML = '';
-  if (!tree) return;
+let _measureCtx = null;
+function measureText(text) {
+  if (!_measureCtx) {
+    const c = document.createElement('canvas');
+    _measureCtx = c.getContext('2d');
+  }
+  _measureCtx.font = `${FONT_SZ}px "Consolas", "Liberation Mono", Menlo, Courier, monospace`;
+  return _measureCtx.measureText(text).width;
+}
 
-  const measures = measureTree(tree);
-  const PAD = 16;
-  const totalW = measures.w + PAD * 2;
-  const totalH = measures.h + PAD * 2;
+function boxSize(node, isRoot = false) {
+  const label = nodeLabel(node, isRoot);
+  const w = Math.ceil(measureText(label)) + PAD_X * 2;
+  const h = FONT_SZ + PAD_Y * 2;
+  return { w, h, label };
+}
 
-  svg.setAttribute('viewBox', `0 0 ${totalW} ${totalH}`);
-  svg.setAttribute('width', totalW);
-  svg.setAttribute('height', totalH);
+function computeLayout(root) {
+  function annotate(node, isRoot) {
+    const { w, h, label } = boxSize(node, isRoot);
+    node._w = w; node._h = h; node._label = label;
+    children(node).forEach(c => annotate(c, false));
+  }
+  annotate(root, true);
 
-  const nodes = layoutTree(tree, measures, PAD, PAD);
+  function subtreeWidth(node) {
+    const ch = children(node);
+    if (ch.length === 0) {
+      node._subtreeW = node._w;
+    } else {
+      const chTotal = ch.reduce((s, c) => s + subtreeWidth(c), 0)
+                    + (ch.length - 1) * H_GAP;
+      node._subtreeW = Math.max(node._w, chTotal);
+    }
+    return node._subtreeW;
+  }
+  subtreeWidth(root);
 
-  // Draw edges first
-  nodes.forEach(n => {
-    n.childCentres.forEach(childCx => {
-      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      line.setAttribute('x1', n.cx);
-      line.setAttribute('y1', n.cy + NODE_H / 2);
-      line.setAttribute('x2', childCx);
-      line.setAttribute('y2', n.childY);
-      line.setAttribute('stroke', '#ccc');
-      line.setAttribute('stroke-width', '1.5');
-      svg.appendChild(line);
+  const positions = new Map();
+
+  function assign(node, xCenter, depth) {
+    const y = depth * (FONT_SZ + PAD_Y * 2 + V_GAP);
+    const x = xCenter - node._w / 2;
+    positions.set(node, { x, y, w: node._w, h: node._h, label: node._label });
+
+    const ch = children(node);
+    if (ch.length === 0) return;
+
+    const totalChildW = ch.reduce((s, c) => s + c._subtreeW, 0)
+                      + (ch.length - 1) * H_GAP;
+    let cursor = xCenter - totalChildW / 2;
+    ch.forEach(child => {
+      assign(child, cursor + child._subtreeW / 2, depth + 1);
+      cursor += child._subtreeW + H_GAP;
     });
-  });
+  }
 
-  // Draw nodes
-  nodes.forEach(n => {
-    const col = TREE_COLORS[n.tree.type] || TREE_COLORS.LETTER;
-    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+  const rootCenter = root._subtreeW / 2;
+  assign(root, rootCenter, 0);
 
-    const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-    rect.setAttribute('x', n.cx - NODE_W / 2);
-    rect.setAttribute('y', n.cy - NODE_H / 2);
-    rect.setAttribute('width', NODE_W);
-    rect.setAttribute('height', NODE_H);
-    rect.setAttribute('rx', NODE_RX);
-    rect.setAttribute('fill', col.fill);
-    rect.setAttribute('stroke', col.stroke);
-    rect.setAttribute('stroke-width', '1.5');
+  return positions;
+}
 
-    const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-    label.setAttribute('x', n.cx);
-    label.setAttribute('y', n.cy + 1);
-    label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('dominant-baseline', 'middle');
-    label.setAttribute('font-family', 'monospace');
-    label.setAttribute('font-size', '13');
-    label.setAttribute('fill', '#333');
-    label.textContent = n.tree.str;
+function svgEl(tag, attrs, text) {
+  const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+  if (text !== undefined) el.textContent = text;
+  return el;
+}
 
-    g.appendChild(rect);
-    g.appendChild(label);
+function renderTree(ast) {
+  const container = document.getElementById('tree-container');
+  const svg       = document.getElementById('tree-svg');
+  const empty     = document.getElementById('tree-empty');
 
-    // Truth value badge (top-left of node)
-    if (assignment !== null && assignment !== undefined) {
-      const val = evaluate(n.tree, assignment);
-      if (val !== null) {
-        const badge = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-        badge.setAttribute('x', n.cx - NODE_W / 2 + 5);
-        badge.setAttribute('y', n.cy - NODE_H / 2 + 11);
-        badge.setAttribute('font-family', 'monospace');
-        badge.setAttribute('font-size', '10');
-        badge.setAttribute('font-weight', 'bold');
-        badge.setAttribute('fill', val ? '#2a9d5c' : '#c0606a');
-        badge.textContent = val ? 'T' : 'F';
-        g.appendChild(badge);
-      }
-    }
+  svg.innerHTML = '';
 
-    svg.appendChild(g);
-  });
+  if (!ast) {
+    if (empty) empty.hidden = false;
+    svg.setAttribute('height', 0);
+    svg.setAttribute('width', 0);
+    return;
+  }
+  if (empty) empty.hidden = true;
 
-  // Auto-scale to container
-  const container = svg.parentElement;
-  if (container) {
-    const cw = container.clientWidth || 400;
-    if (totalW > cw) {
-      svg.setAttribute('width', cw);
-      svg.setAttribute('height', Math.round(totalH * cw / totalW));
-    }
+  const positions = computeLayout(ast);
+
+  const BADGE_R  = 10;
+  const MARGIN_V = BADGE_R + 6;
+  const MARGIN_H = BADGE_R + 8;
+  let maxX = 0, maxY = 0;
+  for (const { x, y, w, h } of positions.values()) {
+    maxX = Math.max(maxX, x + w);
+    maxY = Math.max(maxY, y + h);
+  }
+  const treeW = maxX + MARGIN_H * 2;
+  const H     = maxY + MARGIN_V * 2;
+
+  svg.setAttribute('width',  treeW);
+  svg.setAttribute('height', H);
+  svg.removeAttribute('viewBox');
+  svg.removeAttribute('preserveAspectRatio');
+
+  const edgeG = svgEl('g', { id: 'tree-edges', transform: `translate(${MARGIN_H}, ${MARGIN_V})` });
+  const nodeG = svgEl('g', { id: 'tree-nodes', transform: `translate(${MARGIN_H}, ${MARGIN_V})` });
+  svg.appendChild(edgeG);
+  svg.appendChild(nodeG);
+
+  function draw(node) {
+    const pos = positions.get(node);
+    const ch  = children(node);
+    const isLetter = node.type === 'letter';
+
+    ch.forEach(child => {
+      const cpos = positions.get(child);
+      const x1 = pos.x + pos.w / 2;
+      const y1 = pos.y + pos.h;
+      const x2 = cpos.x + cpos.w / 2;
+      const y2 = cpos.y;
+      edgeG.appendChild(svgEl('line', {
+        x1, y1, x2, y2,
+        stroke: 'var(--color-border-strong, #c0bbb3)',
+        'stroke-width': '1.5',
+      }));
+      draw(child);
+    });
+
+    const g = svgEl('g', { class: `tree-node tree-node-${isLetter ? 'letter' : 'compound'}` });
+
+    g.appendChild(svgEl('rect', {
+      x:      pos.x,
+      y:      pos.y,
+      width:  pos.w,
+      height: pos.h,
+      rx: 5, ry: 5,
+      fill:   'var(--color-surface)',
+      stroke: isLetter ? 'var(--color-teal)' : 'var(--color-primary)',
+      'stroke-width': '1.8',
+    }));
+
+    g.appendChild(svgEl('text', {
+      x: pos.x + pos.w / 2,
+      y: pos.y + pos.h / 2,
+      'text-anchor':      'middle',
+      'dominant-baseline':'central',
+      'font-family':      'var(--font-mono)',
+      'font-size':        FONT_SZ,
+      fill: isLetter ? 'var(--color-teal)' : 'var(--color-primary)',
+    }, pos.label));
+
+    nodeG.appendChild(g);
+  }
+
+  draw(ast);
+}
+
+function renderTreeWithValues(ast, assignment) {
+  renderTree(ast);
+  if (!ast) return;
+
+  const svg = document.getElementById('tree-svg');
+  const positions = computeLayout(ast);
+
+  const nodeValues = new Map();
+  function computeValues(node) {
+    try {
+      const val = evaluate(node, assignment);
+      nodeValues.set(node, val);
+    } catch (e) { /* skip */ }
+    children(node).forEach(computeValues);
+  }
+  computeValues(ast);
+
+  const BADGE_R2  = 10;
+  const MARGIN_H2 = BADGE_R2 + 8;
+  const MARGIN_V2 = BADGE_R2 + 6;
+  const badgeG = svgEl('g', { id: 'tree-badges', transform: `translate(${MARGIN_H2}, ${MARGIN_V2})` });
+  svg.appendChild(badgeG);
+
+  for (const [node, pos] of positions) {
+    const val = nodeValues.get(node);
+    if (val === undefined) continue;
+
+    const R  = 8;
+    const bx = pos.x + pos.w - R * 0.3;
+    const by = pos.y + R * 0.3;
+
+    const badge = svgEl('g', {});
+    badge.appendChild(svgEl('circle', {
+      cx: bx, cy: by, r: R,
+      fill:   val ? 'var(--color-true)' : 'var(--color-false)',
+      stroke: 'var(--color-surface)',
+      'stroke-width': '1.5',
+    }));
+    badge.appendChild(svgEl('text', {
+      x: bx, y: by,
+      'text-anchor':      'middle',
+      'dominant-baseline':'central',
+      'font-family':      'var(--font-sans)',
+      'font-size':        '8',
+      'font-weight':      '700',
+      fill: '#fff',
+    }, val ? 'T' : 'F'));
+    badgeG.appendChild(badge);
   }
 }
