@@ -1263,7 +1263,7 @@ ol.help-list {
 
 /* ── Completion banner ────────────────────────────────────────── */
 .practice-complete-banner {
-  display: flex;
+  display: none;
   align-items: center;
   gap: var(--space-3);
   margin: var(--space-3) 0 0;
