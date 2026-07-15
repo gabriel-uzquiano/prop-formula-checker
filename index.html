@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Formula Checker — Propositional Logic</title>
+  <link rel="stylesheet" href="style.css?v=1" />
+  <style>
+    /* ── App-specific styles ── */
+    .formula-input-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 0.625rem;
+    }
+    .formula-input {
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      padding: 0.5rem 0.75rem;
+      border: 1.5px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-bg);
+      color: var(--color-text);
+      box-sizing: border-box;
+      transition: border-color 0.15s;
+    }
+    .formula-input:focus { outline: none; border-color: var(--color-primary); }
+    .formula-input.valid   { border-color: #2a9d5c; }
+    .formula-input.invalid { border-color: #c0606a; }
+
+    .formula-status {
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+      min-height: 1.2em;
+      color: var(--color-text-muted);
+    }
+    .formula-status.ok          { color: #2a9d5c; }
+    .formula-status.ok.unofficial { color: #2a7a9d; }
+    .formula-status.error       { color: #c0606a; }
+
+    .sym-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+    }
+    .sym-btn {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      min-width: 2.2rem;
+      padding: 0.3rem 0.5rem;
+      border: 1px solid var(--color-border);
+      border-radius: 5px;
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+      transition: background 0.12s, border-color 0.12s;
+    }
+    .sym-btn:hover { background: var(--color-surface-offset); border-color: var(--color-primary); }
+
+    .examples-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.375rem;
+      align-items: center;
+    }
+    .examples-label {
+      font-size: 0.8rem;
+      color: var(--color-text-muted);
+      flex-shrink: 0;
+    }
+    .example-chip {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      padding: 0.2rem 0.6rem;
+      border: 1px solid var(--color-border);
+      border-radius: 20px;
+      background: var(--color-surface);
+      color: var(--color-text);
+      cursor: pointer;
+      transition: background 0.12s;
+    }
+    .example-chip:hover { background: var(--color-surface-offset); border-color: var(--color-primary); }
+
+    /* Tree */
+    .tree-wrap {
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+      padding: 0.625rem 0;
+    }
+    #tree-svg { display: block; max-width: 100%; }
+
+    /* Assignment */
+    .assign-slots {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+    .assign-slot {
+      display: flex;
+      align-items: center;
+      gap: 0.375rem;
+      padding: 0.4rem 0.75rem;
+      border: 1.5px solid var(--color-border);
+      border-radius: 6px;
+      background: var(--color-surface);
+      transition: border-color 0.15s;
+    }
+    .assign-slot.missing { border-color: #c0606a; }
+    .assign-letter {
+      font-family: var(--font-mono);
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--color-text);
+      min-width: 1.2rem;
+    }
+    .assign-radio {
+      display: flex;
+      align-items: center;
+      gap: 0.2rem;
+      font-family: var(--font-mono);
+      font-size: 0.9rem;
+      color: var(--color-text);
+      cursor: pointer;
+    }
+    .eval-row {
+      margin-top: 0.625rem;
+    }
+
+    /* Help panel */
+    .help-panel {
+      position: fixed;
+      inset: 0;
+      background: var(--color-bg);
+      z-index: 100;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+    .help-panel h2 { margin-top: 0; }
+    .help-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-family: var(--font-mono);
+      font-size: 0.875rem;
+    }
+    .help-table th, .help-table td {
+      text-align: left;
+      padding: 0.3rem 0.75rem;
+      border-bottom: 1px solid var(--color-border);
+    }
+    .help-table th { color: var(--color-text-muted); font-weight: 500; }
+    .help-close-row { margin-top: 1.5rem; }
+
+    /* Card mode */
+    body.card-mode { padding: 0; background: transparent; }
+    body.card-mode .app-main { padding: 0.5rem 0.75rem 0.75rem; gap: 1rem; }
+    body.card-mode .card { box-shadow: none; border: 1px solid var(--color-border); border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <div class="app-title">Formula Checker <span class="app-title-sub">Propositional Logic</span></div>
+      <div class="app-header-actions">
+        <button id="help-btn" class="header-link">Help</button>
+        <button id="theme-btn" class="icon-btn" aria-label="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/>
+            <line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/>
+            <line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- Formula card -->
+    <div class="card" id="formula-card">
+      <div class="card-header"><span class="card-title">Formula</span></div>
+      <div class="card-body">
+        <div class="formula-input-wrap">
+          <div class="sym-bar">
+            <button class="sym-btn" data-sym="¬">¬</button>
+            <button class="sym-btn" data-sym="∧">∧</button>
+            <button class="sym-btn" data-sym="∨">∨</button>
+            <button class="sym-btn" data-sym="→">→</button>
+            <button class="sym-btn" data-sym="(">(</button>
+            <button class="sym-btn" data-sym=")">)</button>
+          </div>
+          <input
+            id="formula-input"
+            class="formula-input"
+            type="text"
+            autocomplete="off"
+            spellcheck="false"
+            placeholder="e.g.  ¬(p ∧ q)  or  p → (q ∨ r)"
+          />
+          <div id="formula-status" class="formula-status"></div>
+          <div class="examples-row">
+            <span class="examples-label">Examples:</span>
+            <button class="example-chip" data-formula="¬(p ∧ q)">¬(p ∧ q)</button>
+            <button class="example-chip" data-formula="p → q">p → q</button>
+            <button class="example-chip" data-formula="p ∨ (q → ¬r)">p ∨ (q → ¬r)</button>
+            <button class="example-chip" data-formula="p → (q → p)">p → (q → p)</button>
+            <button class="example-chip" data-formula="(p ∧ q) → r">(p ∧ q) → r</button>
+            <button class="example-chip" data-formula="¬(p → q) ∧ (q ∨ ¬p)">¬(p → q) ∧ (q ∨ ¬p)</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Parse tree card -->
+    <div class="card hidden" id="tree-card">
+      <div class="card-header"><span class="card-title">Parse Tree</span></div>
+      <div class="card-body">
+        <div class="tree-wrap" id="tree-wrap">
+          <svg id="tree-svg"></svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment card -->
+    <div class="card hidden" id="assign-card">
+      <div class="card-header"><span class="card-title">Assignment</span></div>
+      <div class="card-body">
+        <div id="assign-slots" class="assign-slots"></div>
+        <div class="eval-row">
+          <button id="eval-btn" class="btn btn-primary">Evaluate</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Help panel -->
+  <div id="help-panel" class="help-panel hidden">
+    <h2>Propositional Logic — Syntax</h2>
+
+    <h3>Vocabulary</h3>
+    <table class="help-table">
+      <tr><th>Category</th><th>Symbols</th></tr>
+      <tr><td>Sentence letters</td><td>p, q, r, s, t (with optional subscripts: p1, q2, …)</td></tr>
+      <tr><td>Connectives</td><td>¬  ∧  ∨  →</td></tr>
+      <tr><td>Parentheses</td><td>( )</td></tr>
+    </table>
+
+    <h3>Formation Rules</h3>
+    <ol>
+      <li>Every sentence letter is a formula.</li>
+      <li>If φ is a formula, so is ¬φ.</li>
+      <li>If φ and ψ are formulas, so are (φ ∧ ψ), (φ ∨ ψ), (φ → ψ).</li>
+      <li>Nothing else is a formula.</li>
+    </ol>
+    <p><em>The outer parentheses of the main connective may be omitted.</em></p>
+
+    <h3>ASCII Shortcuts</h3>
+    <table class="help-table">
+      <tr><th style="min-width:8rem">You type</th><th>Symbol</th></tr>
+      <tr><td><code>-&gt;</code> or <code>=&gt;</code></td><td>→</td></tr>
+      <tr><td><code>/\</code> or <code>&amp;</code></td><td>∧</td></tr>
+      <tr><td><code>\/</code> or <code>|</code></td><td>∨</td></tr>
+      <tr><td><code>~</code></td><td>¬</td></tr>
+    </table>
+
+    <div class="help-close-row">
+      <button id="help-close" class="btn btn-secondary">Close</button>
+    </div>
+  </div>
+
+  <script src="parser.js?v=1"></script>
+  <script src="tree.js?v=1"></script>
+  <script src="app.js?v=1"></script>
+</body>
+</html>
