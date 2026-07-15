@@ -1024,3 +1024,74 @@ ol.help-list {
   display: block;
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   ROUND-2 FIXES
+   ═══════════════════════════════════════════════════════════════ */
+
+/* (ii) Theme toggle — CSS moon/sun visibility (matches proof/model-checker) */
+.theme-toggle {
+  width: 32px; height: 32px;
+  padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-full);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition);
+}
+.theme-toggle:hover { color: var(--color-text); }
+.theme-toggle svg { width: 18px; height: 18px; flex: none; }
+/* show moon in light mode, sun in dark mode */
+[data-theme="light"] .icon-sun  { display: none; }
+[data-theme="dark"]  .icon-moon { display: none; }
+
+/* (i) Copy link button */
+.copy-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--color-text-muted);
+  background: transparent;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px var(--space-3);
+  line-height: 1;
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.copy-link-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-highlight);
+}
+.copy-link-btn.shared {
+  border-color: var(--color-teal);
+  color: var(--color-teal);
+  background: var(--color-teal-highlight);
+}
+.copy-link-icon { flex: 0 0 auto; }
+.copy-link-text { white-space: nowrap; }
+[data-theme="dark"] .copy-link-btn { color: var(--color-text-muted); border-color: var(--color-border); }
+
+/* (iii) Tree centering — fix hidden conflict
+   .tree-empty has display:flex which overrides the [hidden] attribute.
+   Override explicitly so it hides when JS sets hidden=true. */
+.tree-empty[hidden] { display: none !important; }
+
+/* Use block + margin:auto to center SVG — more reliable than flex centering
+   when the flex child has no explicit width. */
+.tree-container {
+  display: block !important;
+  padding: var(--space-4) 0;
+  overflow-x: auto;
+  text-align: center; /* fallback centering */
+}
+#tree-svg {
+  display: inline-block !important; /* centers with text-align on parent */
+  flex-shrink: unset;
+}

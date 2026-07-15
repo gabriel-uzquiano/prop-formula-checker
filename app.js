@@ -27,23 +27,14 @@ if (isCardMode) {
 
 // ── Theme toggle ──────────────────────────────────────────────────────────────
 (function () {
-  const btn  = document.querySelector('[data-theme-toggle]');
   const root = document.documentElement;
   const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  let theme = prefersDark ? 'dark' : 'light';
-  root.setAttribute('data-theme', theme);
-  setIcon(btn, theme);
+  root.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+  const btn = document.querySelector('[data-theme-toggle]');
   if (btn) btn.addEventListener('click', () => {
-    theme = theme === 'dark' ? 'light' : 'dark';
-    root.setAttribute('data-theme', theme);
-    setIcon(btn, theme);
+    root.setAttribute('data-theme',
+      root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
   });
-  function setIcon(btn, theme) {
-    if (!btn) return;
-    btn.innerHTML = theme === 'dark'
-      ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>'
-      : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';
-  }
 })();
 
 // ── Help panel ────────────────────────────────────────────────────────────────
@@ -289,6 +280,38 @@ function applyCardMode() {
     if (fCard) fCard.hidden = true;
   }
 }
+
+
+// ── Copy link ──────────────────────────────────────────────────────────────────
+const copyLinkBtn = document.getElementById('copy-link-btn');
+
+function copyLink() {
+  // Build a URL with the current hash (already maintained by pushHash)
+  const url = location.href;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).then(
+      () => flashCopy('Copied!'),
+      () => { history.replaceState(null, '', url); flashCopy('Link ready'); }
+    );
+  } else {
+    history.replaceState(null, '', url);
+    flashCopy('Link ready');
+  }
+}
+
+function flashCopy(msg) {
+  if (!copyLinkBtn) return;
+  const textEl = copyLinkBtn.querySelector('.copy-link-text');
+  const original = textEl ? textEl.textContent : copyLinkBtn.textContent;
+  if (textEl) textEl.textContent = msg; else copyLinkBtn.textContent = msg;
+  copyLinkBtn.classList.add('shared');
+  setTimeout(() => {
+    if (textEl) textEl.textContent = original; else copyLinkBtn.textContent = original;
+    copyLinkBtn.classList.remove('shared');
+  }, 1800);
+}
+
+if (copyLinkBtn) copyLinkBtn.addEventListener('click', copyLink);
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
