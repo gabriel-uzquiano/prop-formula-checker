@@ -246,15 +246,11 @@ input, select { font: inherit; color: inherit; }
 
 /* ─── Main layout ─────────────────────────────────────────────── */
 .app-main {
-  max-width: 1200px;
+  max-width: 900px;
   margin: 0 auto;
   padding: var(--space-6);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-5);
-  align-items: start;
+  display: block;
 }
-@media (max-width: 860px) { .app-main { grid-template-columns: 1fr; } }
 
 /* ─── Cards — clean academic book style ──────────────────────── */
 .card {
