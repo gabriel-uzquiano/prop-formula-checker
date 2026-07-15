@@ -362,8 +362,10 @@ function ptUpdateStatus(msg) {
 function ptSetDone(done) {
   const banner = document.getElementById('practice-complete-banner');
   const solBtn = document.getElementById('practice-solution-btn');
-  if (banner) { banner.hidden = !done; banner.style.display = done ? 'flex' : 'none'; }
+  const solRow = document.getElementById('practice-solution-row');
+  if (banner) banner.hidden = !done;
   if (solBtn) solBtn.hidden = !done;
+  if (solRow) solRow.hidden = !done;
   ptUpdateToolbar();
 }
 

@@ -341,7 +341,7 @@ function switchTreeTab(tab) {
     // Start or refresh practice session
     if (currentAst) {
       startPractice(currentAst);
-      if (solRow) solRow.hidden = false;
+      // solRow is shown by ptSetDone(true) after tree completion
     } else {
       const practiceStatus = document.getElementById('practice-status');
       if (practiceStatus) practiceStatus.textContent = 'Enter a valid formula above, then switch to Build mode.';

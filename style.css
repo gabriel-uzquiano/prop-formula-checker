@@ -154,6 +154,7 @@
 
 /* ─── Base reset ──────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 html { -webkit-font-smoothing: antialiased; scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
@@ -1263,7 +1264,7 @@ ol.help-list {
 
 /* ── Completion banner ────────────────────────────────────────── */
 .practice-complete-banner {
-  display: none;
+  display: flex;
   align-items: center;
   gap: var(--space-3);
   margin: var(--space-3) 0 0;
