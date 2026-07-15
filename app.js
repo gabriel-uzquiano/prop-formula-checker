@@ -313,6 +313,68 @@ function flashCopy(msg) {
 
 if (copyLinkBtn) copyLinkBtn.addEventListener('click', copyLink);
 
+// ── Tree tab switching ───────────────────────────────────────────────────────
+let _activeTab = 'view';
+
+function switchTreeTab(tab) {
+  _activeTab = tab;
+  const panelView  = document.getElementById('panel-view');
+  const panelBuild = document.getElementById('panel-build');
+  const tabView    = document.getElementById('tab-view');
+  const tabBuild   = document.getElementById('tab-build');
+  const solRow     = document.getElementById('practice-solution-row');
+
+  if (tab === 'view') {
+    panelView.hidden  = false;
+    panelBuild.hidden = true;
+    tabView.classList.add('tree-tab-active');
+    tabView.setAttribute('aria-selected', 'true');
+    tabBuild.classList.remove('tree-tab-active');
+    tabBuild.setAttribute('aria-selected', 'false');
+  } else {
+    panelView.hidden  = true;
+    panelBuild.hidden = false;
+    tabView.classList.remove('tree-tab-active');
+    tabView.setAttribute('aria-selected', 'false');
+    tabBuild.classList.add('tree-tab-active');
+    tabBuild.setAttribute('aria-selected', 'true');
+    // Start or refresh practice session
+    if (currentAst) {
+      startPractice(currentAst);
+      if (solRow) solRow.hidden = false;
+    } else {
+      const practiceStatus = document.getElementById('practice-status');
+      if (practiceStatus) practiceStatus.textContent = 'Enter a valid formula above, then switch to Build mode.';
+    }
+  }
+}
+
+function togglePracticeSolution() {
+  const panel = document.getElementById('practice-solution-panel');
+  const btn   = document.getElementById('practice-solution-btn');
+  const solSvg = document.getElementById('solution-svg');
+  if (!panel) return;
+  const nowHidden = panel.hidden;
+  panel.hidden = !nowHidden;
+  if (btn) btn.textContent = nowHidden ? 'Hide solution' : 'Show solution';
+  // Render the solution tree into the solution SVG when first revealed
+  if (nowHidden && currentAst && solSvg) {
+    // Temporarily redirect renderTree output to solution-svg
+    const origId = document.getElementById('tree-svg').id;
+    const tmpSvg = document.getElementById('tree-svg');
+    tmpSvg.id = '__tmp_hidden';
+    solSvg.id = 'tree-svg';
+    renderTree(currentAst);
+    solSvg.id = 'solution-svg';
+    tmpSvg.id = origId;
+  }
+}
+
+// ── Hook practiceAnswer and startPractice into onFormulaChange ────────────────
+const _origOnFormulaChange = onFormulaChange;
+// Patch: when formula changes while on build tab, restart practice
+const _origRenderTree = renderTree;
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 (function init() {
   applyCardMode();

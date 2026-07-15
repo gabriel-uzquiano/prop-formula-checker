@@ -149,13 +149,65 @@
       <section class="card tree-card" id="tree-card">
         <div class="card-header">
           <h2 class="section-title">Parse Tree</h2>
-          <span class="card-subtitle" id="tree-subtitle"></span>
-        </div>
-        <div class="tree-container" id="tree-container">
-          <div id="tree-empty" class="tree-empty">
-            <p>Enter a formula to see its parse tree</p>
+          <div class="tree-tabs" role="tablist" aria-label="Tree mode">
+            <button class="tree-tab tree-tab-active" id="tab-view" role="tab"
+              aria-selected="true" aria-controls="panel-view"
+              onclick="switchTreeTab('view')">View</button>
+            <button class="tree-tab" id="tab-build" role="tab"
+              aria-selected="false" aria-controls="panel-build"
+              onclick="switchTreeTab('build')">Build</button>
           </div>
-          <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+        </div>
+
+        <!-- VIEW panel -->
+        <div id="panel-view" role="tabpanel" aria-labelledby="tab-view">
+          <div class="tree-container" id="tree-container">
+            <div id="tree-empty" class="tree-empty">
+              <p>Enter a formula to see its parse tree</p>
+            </div>
+            <svg id="tree-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+        </div>
+
+        <!-- BUILD panel -->
+        <div id="panel-build" role="tabpanel" aria-labelledby="tab-build" hidden>
+
+          <!-- Practice toolbar -->
+          <div class="pt-toolbar">
+            <span class="pt-toolbar-label">Main connective:</span>
+            <button class="sym-btn pt-conn-btn" data-conn="¬" onclick="practiceAnswer('¬')" disabled>¬</button>
+            <button class="sym-btn pt-conn-btn" data-conn="∧" onclick="practiceAnswer('∧')" disabled>∧</button>
+            <button class="sym-btn pt-conn-btn" data-conn="∨" onclick="practiceAnswer('∨')" disabled>∨</button>
+            <button class="sym-btn pt-conn-btn" data-conn="→" onclick="practiceAnswer('→')" disabled>→</button>
+            <button class="sym-btn pt-conn-btn" id="pt-atom-btn" data-conn="atom" onclick="practiceAnswer('atom')" disabled title="Sentence letter (no connective)">atom</button>
+            <button class="btn btn-reset pt-reset-btn" onclick="resetPractice()" title="Restart">Reset</button>
+          </div>
+
+          <!-- Status message -->
+          <p class="practice-status" id="practice-status">Enter a formula above and switch to Build mode to practice.</p>
+
+          <!-- Practice SVG -->
+          <div class="tree-container" id="practice-container">
+            <svg id="practice-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+          </div>
+
+          <!-- Completion banner -->
+          <div id="practice-complete-banner" class="practice-complete-banner" hidden>
+            <span class="practice-complete-check">✓</span>
+            Tree complete!
+          </div>
+
+          <!-- Solution toggle -->
+          <div class="practice-solution-row" id="practice-solution-row" hidden>
+            <button class="btn btn-secondary" id="practice-solution-btn"
+              onclick="togglePracticeSolution()" hidden>Show solution</button>
+            <div id="practice-solution-panel" hidden>
+              <div class="tree-container" id="solution-container">
+                <svg id="solution-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+              </div>
+            </div>
+          </div>
+
         </div>
       </section>
     </div>
@@ -179,6 +231,7 @@
   <script src="parser.js"></script>
   <script src="evaluator.js"></script>
   <script src="tree.js"></script>
+  <script src="tree-practice.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
