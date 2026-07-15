@@ -1114,3 +1114,27 @@ ol.help-list {
   display: inline-block !important; /* centers with text-align on parent */
   flex-shrink: unset;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   SVG TREE STYLES (node colours)
+   ═══════════════════════════════════════════════════════════════ */
+.tree-edge {
+  stroke: var(--color-border);
+  stroke-width: 1.5;
+}
+.tree-node-rect {
+  stroke: var(--color-border);
+  fill: var(--color-surface);
+  stroke-width: 1.5;
+}
+.tree-node-text {
+  font-family: var(--font-body);
+  font-size: 13px;
+  fill: var(--color-text);
+}
+.node-letter .tree-node-rect { stroke: var(--color-teal);    fill: var(--color-surface); }
+.node-letter .tree-node-text { fill: var(--color-teal); }
+.node-neg    .tree-node-rect { stroke: var(--color-primary); fill: var(--color-surface); }
+.node-neg    .tree-node-text { fill: var(--color-primary); }
+.node-binary .tree-node-rect { stroke: var(--color-border);  fill: var(--color-surface); }
+.node-binary .tree-node-text { fill: var(--color-text); }
