@@ -269,7 +269,9 @@ input, select { font: inherit; color: inherit; }
   max-width: 900px;
   margin: 0 auto;
   padding: var(--space-6);
-  display: block;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
 }
 
 /* ─── Cards — clean academic book style ──────────────────────── */
