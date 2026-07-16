@@ -314,7 +314,7 @@ function flashCopy(msg) {
 if (copyLinkBtn) copyLinkBtn.addEventListener('click', copyLink);
 
 // ── Tree tab switching ───────────────────────────────────────────────────────
-let _activeTab = 'view';
+let _activeTab = 'build';
 
 function switchTreeTab(tab) {
   _activeTab = tab;
@@ -382,6 +382,8 @@ const _origRenderTree = renderTree;
   if (!loaded) {
     renderTree(null);
   }
+  // Start in Build mode; if a formula was loaded from hash, kick off practice
+  if (currentAst) startPractice(currentAst);
 })();
 
 function escHtml(s) {

@@ -150,17 +150,17 @@
         <div class="card-header">
           <h2 class="section-title">Parse Tree</h2>
           <div class="tree-tabs" role="tablist" aria-label="Tree mode">
-            <button class="tree-tab tree-tab-active" id="tab-view" role="tab"
-              aria-selected="true" aria-controls="panel-view"
+            <button class="tree-tab" id="tab-view" role="tab"
+              aria-selected="false" aria-controls="panel-view"
               onclick="switchTreeTab('view')">View</button>
-            <button class="tree-tab" id="tab-build" role="tab"
-              aria-selected="false" aria-controls="panel-build"
+            <button class="tree-tab tree-tab-active" id="tab-build" role="tab"
+              aria-selected="true" aria-controls="panel-build"
               onclick="switchTreeTab('build')">Build</button>
           </div>
         </div>
 
         <!-- VIEW panel -->
-        <div id="panel-view" role="tabpanel" aria-labelledby="tab-view">
+        <div id="panel-view" role="tabpanel" aria-labelledby="tab-view" hidden>
           <div class="tree-container" id="tree-container">
             <div id="tree-empty" class="tree-empty">
               <p>Enter a formula to see its parse tree</p>
@@ -170,7 +170,7 @@
         </div>
 
         <!-- BUILD panel -->
-        <div id="panel-build" role="tabpanel" aria-labelledby="tab-build" hidden>
+        <div id="panel-build" role="tabpanel" aria-labelledby="tab-build">
 
           <!-- Practice toolbar -->
           <div class="pt-toolbar">
@@ -228,10 +228,10 @@
 
   </main>
 
-  <script src="parser.js?v=7"></script>
-  <script src="evaluator.js?v=7"></script>
-  <script src="tree.js?v=7"></script>
-  <script src="tree-practice.js?v=7"></script>
-  <script src="app.js?v=7"></script>
+  <script src="parser.js?v=8"></script>
+  <script src="evaluator.js?v=8"></script>
+  <script src="tree.js?v=8"></script>
+  <script src="tree-practice.js?v=8"></script>
+  <script src="app.js?v=8"></script>
 </body>
 </html>
