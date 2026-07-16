@@ -344,7 +344,7 @@ function switchTreeTab(tab) {
       // solRow is shown by ptSetDone(true) after tree completion
     } else {
       const practiceStatus = document.getElementById('practice-status');
-      if (practiceStatus) practiceStatus.textContent = 'Enter a valid formula above, then switch to Build mode.';
+      if (practiceStatus) practiceStatus.textContent = 'Enter a valid formula above to practice.';
     }
   }
 }
