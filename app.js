@@ -115,6 +115,7 @@ function onFormulaChange(updateHash = false) {
     if (statusEl) { statusEl.textContent = '✓ ' + pretty; statusEl.className = 'parse-status ok'; }
     if (formulaInput) formulaInput.className = 'formula-input-field valid';
     renderTree(currentAst);
+    if (_activeTab === 'build') startPractice(currentAst);
     buildEvalUI(currentLetters, null);
     if (evalSec && showAssign) evalSec.hidden = false;
     if (updateHash) pushHash(raw, getCurrentAssignment());
@@ -133,6 +134,7 @@ function onFormulaChange(updateHash = false) {
     }
     if (formulaInput) formulaInput.className = 'formula-input-field valid';
     renderTree(ast);
+    if (_activeTab === 'build') startPractice(ast);
     buildEvalUI(currentLetters, null);
     if (evalSec && showAssign) evalSec.hidden = false;
     if (updateHash) pushHash(raw, getCurrentAssignment());
@@ -314,7 +316,7 @@ function flashCopy(msg) {
 if (copyLinkBtn) copyLinkBtn.addEventListener('click', copyLink);
 
 // ── Tree tab switching ───────────────────────────────────────────────────────
-let _activeTab = 'build';
+var _activeTab = 'build';
 
 function switchTreeTab(tab) {
   _activeTab = tab;
