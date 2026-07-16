@@ -1308,6 +1308,11 @@ ol.help-list {
   color: var(--color-primary);
   background: var(--color-primary-highlight);
 }
+/* Wrap solution SVG so wide trees scroll rather than clip */
+.practice-solution-scroll {
+  overflow-x: auto;
+  width: 100%;
+}
 #solution-svg {
   display: inline-block;
 }

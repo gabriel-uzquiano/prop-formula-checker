@@ -96,6 +96,10 @@ function onFormulaChange(updateHash = false) {
   const statusEl = document.getElementById('parse-status');
   const evalSec  = document.getElementById('eval-section');
 
+  // Show/hide New Problem button
+  const npBtn = document.getElementById('new-problem-btn');
+  if (npBtn) npBtn.hidden = !raw;
+
   if (!raw) {
     if (statusEl) { statusEl.textContent = ''; statusEl.className = 'parse-status'; }
     if (formulaInput) formulaInput.className = 'formula-input-field';
@@ -370,6 +374,36 @@ function togglePracticeSolution() {
     solSvg.id = 'solution-svg';
     tmpSvg.id = origId;
   }
+}
+
+// ── New Problem ──────────────────────────────────────────────────────────────
+function newProblemProp() {
+  if (formulaInput) formulaInput.value = '';
+  currentAst = null;
+  currentLetters = [];
+  history.replaceState(null, '', window.location.pathname);
+
+  const statusEl = document.getElementById('parse-status');
+  if (statusEl) { statusEl.textContent = ''; statusEl.className = 'parse-status'; }
+  if (formulaInput) formulaInput.className = 'formula-input-field';
+  renderTree(null);
+
+  // Hide evaluation and practice panels
+  const evalSec = document.getElementById('eval-section');
+  if (evalSec) evalSec.hidden = true;
+  const banner = document.getElementById('practice-complete-banner');
+  if (banner) banner.hidden = true;
+  const solRow = document.getElementById('practice-solution-row');
+  if (solRow) solRow.hidden = true;
+  const solPanel = document.getElementById('practice-solution-panel');
+  if (solPanel) solPanel.hidden = true;
+
+  // Hide the button itself
+  const npBtn = document.getElementById('new-problem-btn');
+  if (npBtn) npBtn.hidden = true;
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => { if (formulaInput) formulaInput.focus(); }, 300);
 }
 
 // ── Hook practiceAnswer and startPractice into onFormulaChange ────────────────
