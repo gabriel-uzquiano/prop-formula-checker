@@ -10,8 +10,8 @@
  */
 
 // ── State ─────────────────────────────────────────────────────────────────────
-let currentAst     = null;
-let currentLetters = [];
+var currentAst     = null;
+var currentLetters = [];
 
 // ── Card mode ─────────────────────────────────────────────────────────────────
 const CARD_PARAMS = new Set(['formula', 'assign', 'formula,assign']);
