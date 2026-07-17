@@ -88,17 +88,17 @@ function pushHash(formula, assignment) {
 
 // ── Live ASCII replacement (prop logic) ───────────────────────────────────────
 const PROP_ASCII_MAP = [
-  [/<->/g,  '↔'],
-  [/->/g,   '→'],
-  [/\/\\/g,'∧'],
-  [/\\\/g,  '∨'],
-  [/[~](?=[^>]|$)/g, '¬'],
-  [/&/g,   '∧'],
-  [/\|/g,  '∨'],
+  ['<->','\u2194'],
+  ['->','\u2192'],
+  ['/\\','\u2227'],
+  ['\\/','\u2228'],
+  ['~','\u00ac'],
+  ['&','\u2227'],
+  ['|','\u2228'],
 ];
 function applyPropAscii(val) {
   let s = val;
-  for (const [pat, rep] of PROP_ASCII_MAP) s = s.replace(pat, rep);
+  for (const [pat, rep] of PROP_ASCII_MAP) s = s.split(pat).join(rep);
   return s;
 }
 function liveReplace(input) {
