@@ -86,8 +86,34 @@ function pushHash(formula, assignment) {
   if (h) history.replaceState(null, '', h);
 }
 
+// ── Live ASCII replacement (prop logic) ───────────────────────────────────────
+const PROP_ASCII_MAP = [
+  [/<->/g,  '↔'],
+  [/->/g,   '→'],
+  [/\/\\/g,'∧'],
+  [/\\\/g,  '∨'],
+  [/[~](?=[^>]|$)/g, '¬'],
+  [/&/g,   '∧'],
+  [/\|/g,  '∨'],
+];
+function applyPropAscii(val) {
+  let s = val;
+  for (const [pat, rep] of PROP_ASCII_MAP) s = s.replace(pat, rep);
+  return s;
+}
+function liveReplace(input) {
+  const orig = input.value;
+  const pos  = input.selectionStart;
+  const next = applyPropAscii(orig);
+  if (next !== orig) {
+    input.value = next;
+    input.setSelectionRange(pos + (next.length - orig.length), pos + (next.length - orig.length));
+  }
+}
+
 // ── Live parse on input ───────────────────────────────────────────────────────
 if (formulaInput) {
+  formulaInput.addEventListener('keyup', () => { liveReplace(formulaInput); onFormulaChange(true); });
   formulaInput.addEventListener('input', () => onFormulaChange(true));
 }
 
