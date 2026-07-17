@@ -252,6 +252,18 @@ function ptRender() {
         : (isActive ? COLOR_ACTIVE : 'var(--color-text-muted)'),
     }, node._ptLabel));
 
+    // Downward arrow above the active node
+    if (isActive) {
+      g.appendChild(ptSvgEl('text', {
+        x: p.x + p.w / 2,
+        y: p.y - 4,
+        'text-anchor': 'middle',
+        'font-size': '9',
+        fill: COLOR_ACTIVE,
+        class: 'pt-active-arrow',
+      }, '▼'));
+    }
+
     nodeG.appendChild(g);
     _ptNodeMap.set(node, { g });
   }
