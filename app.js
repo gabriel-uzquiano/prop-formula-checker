@@ -318,7 +318,9 @@ function applyCardMode() {
     const copyBtn = document.getElementById('copy-link-btn');
     if (copyBtn) copyBtn.hidden = true;
     const newProbBtn = document.getElementById('new-problem-btn');
-    if (newProbBtn) newProbBtn.hidden = true;
+    if (newProbBtn) { newProbBtn.hidden = true; newProbBtn.style.display = 'none'; }
+    const examplesRow = document.getElementById('examples-row');
+    if (examplesRow) examplesRow.hidden = true;
     // Switch to View tab and hide the Build tab button
     switchTreeTab('view');
     const tabBuild = document.getElementById('tab-build');
