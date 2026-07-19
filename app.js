@@ -14,7 +14,7 @@ var currentAst     = null;
 var currentLetters = [];
 
 // ── Card mode ─────────────────────────────────────────────────────────────────
-const CARD_PARAMS = new Set(['formula', 'assign', 'formula,assign']);
+const CARD_PARAMS = new Set(['formula', 'assign', 'formula,assign', 'tree']);
 const urlParams   = new URLSearchParams(window.location.search);
 const cardMode    = urlParams.get('card');
 const isCardMode  = cardMode !== null && CARD_PARAMS.has(cardMode);
@@ -310,6 +310,21 @@ function applyCardMode() {
   if (cardMode === 'assign') {
     const fCard = document.getElementById('formula-card');
     if (fCard) fCard.hidden = true;
+  }
+  // tree card: formula input + parse tree View tab only (no Build tab, no eval)
+  if (cardMode === 'tree') {
+    const evalSec = document.getElementById('eval-section');
+    if (evalSec) evalSec.hidden = true;
+    const copyBtn = document.getElementById('copy-link-btn');
+    if (copyBtn) copyBtn.hidden = true;
+    const newProbBtn = document.getElementById('new-problem-btn');
+    if (newProbBtn) newProbBtn.hidden = true;
+    // Switch to View tab and hide the Build tab button
+    switchTreeTab('view');
+    const tabBuild = document.getElementById('tab-build');
+    if (tabBuild) tabBuild.hidden = true;
+    const tabView = document.getElementById('tab-view');
+    if (tabView) tabView.hidden = true;  // hide tab bar entirely (single tab)
   }
 }
 
