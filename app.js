@@ -138,6 +138,7 @@ function onFormulaChange(updateHash = false) {
   }
 
   // Try official formula
+  let _parseError = null;
   try {
     currentAst     = parse(raw);
     currentLetters = collectLetters(currentAst);
@@ -150,7 +151,7 @@ function onFormulaChange(updateHash = false) {
     if (evalSec && showAssign) evalSec.hidden = false;
     if (updateHash) pushHash(raw, getCurrentAssignment());
     return;
-  } catch (e1) { /* fall through */ }
+  } catch (e1) { _parseError = e1; /* fall through */ }
 
   // Try unofficial (omitted outer parens)
   try {
@@ -171,10 +172,14 @@ function onFormulaChange(updateHash = false) {
     return;
   } catch (e2) { /* fall through */ }
 
-  // Neither
+  // Neither — show the parser's own error message from the strict parse (e1)
   currentAst     = null;
   currentLetters = [];
-  if (statusEl) { statusEl.textContent = '✗ Not a formula or an abbreviation.'; statusEl.className = 'parse-status err'; }
+  if (statusEl) {
+    const msg = (_parseError && _parseError.message) ? _parseError.message : 'Not a formula or an abbreviation.';
+    statusEl.textContent = '✗ ' + msg;
+    statusEl.className = 'parse-status err';
+  }
   if (formulaInput) formulaInput.className = 'formula-input-field invalid';
   renderTree(null);
   if (evalSec) evalSec.hidden = true;
