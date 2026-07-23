@@ -16,7 +16,9 @@ const V_GAP   = 48;
 const H_GAP   = 16;
 
 function nodeLabel(node, isRoot = false) {
-  return prettyPrint(node, isRoot);
+  // Always use official form (with outer parens) for all nodes in the tree.
+  // prettyPrint(node, false) adds parens around binary connectives at every level.
+  return prettyPrint(node, false);
 }
 
 function children(node) {
